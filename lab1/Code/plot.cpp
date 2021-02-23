@@ -35,9 +35,24 @@ QVector<QColor> Plot::color_bars() const
     return _color_bars;
 }
 
+QColor Plot::color_bars(int index) const
+{
+    return _color_bars[index];
+}
+
 void Plot::setColor_bars(const QVector<QColor> &color_bars)
 {
     _color_bars = color_bars;
+}
+
+void Plot::setColor_bar(const int index, const QColor color)
+{
+    _color_bars[index] = color;
+}
+
+void Plot::addColor_bar(const QColor &color_bar)
+{
+    _color_bars.push_back(color_bar);
 }
 
 QVector<QString> Plot::name_bars() const
@@ -45,9 +60,24 @@ QVector<QString> Plot::name_bars() const
     return _name_bars;
 }
 
+QString Plot::name_bars(int index) const
+{
+    return _name_bars[index];
+}
+
 void Plot::setName_bars(const QVector<QString> &name_bars)
 {
     _name_bars = name_bars;
+}
+
+void Plot::setName_bar(const int index, const QString name)
+{
+    _name_bars[index] = name;
+}
+
+void Plot::addName_bar(const QString &name_bar)
+{
+    _name_bars.push_back(name_bar);
 }
 
 QString Plot::xAxis() const
@@ -110,6 +140,11 @@ void Plot::setData(const QVector<QVector<double> > &data)
     _data = data;
 }
 
+void Plot::addData(const QVector<double> &data)
+{
+    _data.push_back(data);
+}
+
 QVector<double> Plot::ticker() const
 {
     return _ticker;
@@ -138,6 +173,55 @@ QVector<QString> Plot::ticks_name() const
 void Plot::setTicks_name(const QVector<QString> &ticks_name)
 {
     _ticks_name = ticks_name;
+}
+
+void Plot::build(QCustomPlot *chart)
+{
+    chart->clearPlottables();
+    chart->clearGraphs();
+    chart->clearItems();
+    _bars.clear();
+    if (_group != NULL) _group->clear();
+    if (_group != NULL) delete _group;
+    _group = new QCPBarsGroup(chart);
+    width.clear();
+    width = {0.3 ,0.3 ,0.15 ,0.15 ,0.1 ,0.1 ,0.06 ,0.06};
+
+    QLinearGradient *gradient = new QLinearGradient;
+    gradient->setColorAt(0, _background);
+    gradient->setColorAt(1, _background);
+    for (int i = 0; i < _num; i++) {
+        if (_main_x) _bars.push_back(new QCPBars(chart->xAxis, chart->yAxis));
+        else _bars.push_back(new QCPBars(chart->yAxis, chart->xAxis));
+        _bars[_bars.size() - 1]->setAntialiased(false);
+        _bars[_bars.size() - 1]->setStackingGap(1);
+        _bars[_bars.size() - 1]->setName(_name_bars[i]);
+        _bars[_bars.size() - 1]->setBrush(_color_bars[i]);
+        _bars[_bars.size() - 1]->setWidth(width[_num - 1]);
+        _bars[_bars.size() - 1]->setData(_ticker, _data[i]);
+        _bars[_bars.size() - 1]->setBarsGroup(_group);
+    }
+
+    chart->setBackground(QBrush(*gradient));
+    chart->xAxis->setLabel(_xAxis);
+    chart->yAxis->setLabel(_yAxis);
+
+    QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
+    textTicker->addTicks(_ticker, _ticks_name);
+    chart->xAxis->setTicker(textTicker);
+
+    chart->legend->setVisible(_legend);
+    chart->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignRight|Qt::AlignTop);
+    chart->legend->setBrush(QColor(255, 255, 255, 100));
+    chart->legend->setBorderPen(Qt::NoPen);
+    legendFont.setPointSize(10);
+    chart->legend->setFont(legendFont);
+    chart->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+
+    delete gradient;
+
+    chart->update();
+    chart->replot();
 }
 
 QDataStream &operator<<(QDataStream &out, const Plot &plot)
@@ -220,5 +304,5 @@ QDataStream &operator>>(QDataStream &in, Plot &plot)
 
 Plot::Plot()
 {
-    
+    _group = NULL;
 }

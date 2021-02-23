@@ -46,8 +46,6 @@ private slots:
 
     void on_spinBox_num_bars_valueChanged(int arg1);
 
-    void rebuild();
-
     void on_lineEdit_xAxis_textChanged(const QString &arg1);
 
     void on_checkBox_legend_stateChanged(int arg1);
@@ -61,19 +59,7 @@ private slots:
 private:
     Ui::CreatePlot *ui;
     Plot plot;
-    QLinearGradient gradient;
-    QVector<QCPBars*> bars;
-    QCPBarsGroup *group;
-    QVector<double> ticks;
-    int num;
-    QVector<QColor> col_bars;
-    QVector<QString> name_bars;
-    QString x_name;
-    QString y_name;
-    bool main_x;
-    bool legend;
-    QColor background;
-    QVector<double> width;
+    int num = 0;
 };
 
 #endif // CREATEPLOT_H

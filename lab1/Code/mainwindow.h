@@ -36,7 +36,7 @@ private slots:
 
     void on_listWidget_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
 
-    void rebuild(Plot p);
+    void rebuild_table(Plot p);
 
     void on_spinBox_cur_tick_valueChanged(int arg1);
 

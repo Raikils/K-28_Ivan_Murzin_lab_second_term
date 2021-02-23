@@ -2,6 +2,7 @@
 #define PLOT_H
 #include <qcustomplot.h>
 #include <QListWidgetItem>
+#include <QFont>
 
 /*!
  * \class Plot
@@ -28,6 +29,10 @@ private:
     QVector<double> _ticker;
     int _last;
     QVector<QString> _ticks_name;
+    QCPBarsGroup *_group;
+    QVector<QCPBars*> _bars;
+    QVector<double> width;
+    QFont legendFont;
 public:
     Plot();
     /*!
@@ -65,21 +70,27 @@ public:
      * QVector<QColor>, colors of bars
      */
     QVector<QColor> color_bars() const;
+    QColor color_bars(int index) const;
     /*!
      * \brief setColor_bars
      * Function sets colors of bars
      */
     void setColor_bars(const QVector<QColor> &color_bars);
+    void setColor_bar(const int index, const QColor color);
+    void addColor_bar(const QColor &color_bar);
     /*!
      * \brief name_bars
      * QVector<QString>, names of bars
      */
     QVector<QString> name_bars() const;
+    QString name_bars(int index) const;
     /*!
      * \brief setName_bars
      * Function sets names of bars
      */
     void setName_bars(const QVector<QString> &name_bars);
+    void setName_bar(const int index, const QString name);
+    void addName_bar(const QString &name_bar);
     /*!
      * \brief xAxis
      * QString, name of xAxis
@@ -132,6 +143,7 @@ public:
      * Function sets chart`s data
      */
     void setData(const QVector<QVector<double> > &data);
+    void addData(const QVector<double> &data);
     /*!
      * \brief ticker
      * QVector<double>, bar`s numeration
@@ -162,6 +174,8 @@ public:
      * Function sets  names of bar`s numeration
      */
     void setTicks_name(const QVector<QString> &ticks_name);
+
+    void build(QCustomPlot *chart);
 };
 /*!
  * \brief operator <<

@@ -21,8 +21,6 @@ MainWindow::MainWindow(QWidget *parent)
          in >> k;
          k.setListWidgetItem(new QListWidgetItem(ui->listWidget));
          k.listWidgetItem()->setText(k.name());
-         //qDebug() << k.name() << k.background() << k.num() << k.last() << k.color_bars() << k.name_bars() << k.xAxis() << k.yAxis()
-         //         <<k.main_x() << k.legend() << k.data() << k.ticker() << k.ticks_name();
          plots.push_back(k);
     }
     ui->customPlot->xAxis->setRange(0, 4);
@@ -33,24 +31,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     mydelegate = new TableDelagate(this);
 
-    // Create a new model
-        // QStandardItemModel(int rows, int columns, QObject * parent = 0)
-        model = new QStandardItemModel(this);
+    model = new QStandardItemModel(this);
 
-        // Attach the model to the view
-        ui->tableView->setModel(model);
+    ui->tableView->setModel(model);
 
-        /*/ Generate data
-        for(int row = 0; row < 4; row++)
-        {
-            for(int col = 0; col < 2; col++)
-            {
-                QModelIndex index
-                        = model->index(row,col,QModelIndex());
-                // 0 for all data
-                model->setData(index,0);
-            }
-        }*/
     ui->tableView->setItemDelegate(mydelegate);
     connect(model,SIGNAL(itemChanged(QStandardItem*)),this,SLOT(TableItemChange(QStandardItem*)));
     tt = true;
@@ -64,8 +48,6 @@ MainWindow::~MainWindow()
     QDataStream out(&f);
     for (const auto &k : plots) {
         out << Plot(k);
-        //qDebug() << k.name() << k.background() << k.num() << k.last() << k.color_bars() << k.name_bars() << k.xAxis() << k.yAxis()
-        //         <<k.main_x() << k.legend() << k.data() << k.ticker() << k.ticks_name();
     }
     delete ui;
 }
@@ -102,10 +84,7 @@ void MainWindow::DeleteCreatePlot()
 
 void MainWindow::TableItemChange(QStandardItem *item)
 {
-    //qDebug() << item->column() << item->row() << item->text().toDouble();
     if(cur >= 0 && tt) { QVector<QVector<double>> data = plots[cur].data();
-    //data[ui->comboBox_cur_bar->currentIndex()][ui->spinBox_cur_tick->value() - 1] = arg1;
-    //qDebug() << item->column() << item->row() << item->data().toDouble();
     data[item->column()][item->row()] = item->text().toDouble();
     plots[cur].setData(data);
     if (ui->comboBox_cur_bar->currentIndex() == item->column() && ui->spinBox_cur_tick->value() == item->row() + 1) {
@@ -114,7 +93,6 @@ void MainWindow::TableItemChange(QStandardItem *item)
     }
     if (plots[cur].last() == item->row()) {
         plots[cur].setLast(plots[cur].last() + 1);
-        //ui->spinBox_cur_tick->setMaximum(plots[cur].last() + 1);
         ui->spinBox_cur_tick->setMaximum(ui->spinBox_cur_tick->maximum() + 1);
         QVector<QVector<double>> data1 = plots[cur].data();
         for (auto &k : data1) k << 0;
@@ -125,11 +103,8 @@ void MainWindow::TableItemChange(QStandardItem *item)
         QVector<QString> labels = plots[cur].ticks_name();
         labels << QString::number(plots[cur].last() + 1);
         plots[cur].setTicks_name(labels);
-        //qDebug() << plots[cur].data()[0].size();
     }
-    rebuild(plots[cur]);
-    ui->customPlot->update();
-    ui->customPlot->replot();
+    plots[cur].build(ui->customPlot);
     }
     tt = true;
 }
@@ -139,10 +114,9 @@ void MainWindow::on_listWidget_currentItemChanged(QListWidgetItem *current, QLis
     int i = 0;
     for (i = 0; i < plots.size(); i++) {
         if(plots[i].listWidgetItem() == current) {
-            rebuild(plots[i]);
-            ui->customPlot->replot();
-            ui->customPlot->update();
             cur = i;
+            plots[cur].build(ui->customPlot);
+            rebuild_table(plots[cur]);
             ui->spinBox_cur_tick->setValue(1);
             ui->spinBox_cur_tick->setMaximum(plots[i].last() + 1);
             ui->lineEdit_tick_name->setText(plots[i].ticks_name()[0]);
@@ -156,7 +130,6 @@ void MainWindow::on_listWidget_currentItemChanged(QListWidgetItem *current, QLis
                 ui->comboBox_cur_bar->addItem(QString::number(l));
             }
             ui->doubleSpinBox_cur_data->setValue(plots[i].data()[0][0]);
-            cur = i;
             ui->customPlot->update();
             ui->customPlot->replot();
             return;
@@ -164,77 +137,8 @@ void MainWindow::on_listWidget_currentItemChanged(QListWidgetItem *current, QLis
     }
 }
 
-void MainWindow::rebuild(Plot p)
+void MainWindow::rebuild_table(Plot p)
 {
-    ui->customPlot->clearPlottables();
-    ui->customPlot->clearGraphs();
-    ui->customPlot->clearItems();
-    bars.clear();
-    if (group != NULL) group->clear();
-    if (group != NULL) delete group;
-    group = new QCPBarsGroup(ui->customPlot);
-    num = p.num();
-    gradient.setColorAt(0, p.background());
-    gradient.setColorAt(1, p.background());
-    col_bars.clear();
-    col_bars = p.color_bars();
-    name_bars.clear();
-    name_bars = p.name_bars();
-    x_name = p.xAxis();
-    y_name = p.yAxis();
-    main_x = p.main_x();
-    legend = p.legend();
-
-    for (int i = 0; i < num; i++) {
-        if (main_x) bars.push_back(new QCPBars(ui->customPlot->xAxis, ui->customPlot->yAxis));
-        else bars.push_back(new QCPBars(ui->customPlot->yAxis, ui->customPlot->xAxis));
-        bars[bars.size() - 1]->setAntialiased(false);
-        bars[bars.size() - 1]->setStackingGap(1);
-        bars[bars.size() - 1]->setName(name_bars[i]);
-        bars[bars.size() - 1]->setBrush(col_bars[i]);
-        bars[bars.size() - 1]->setWidth(width[p.num() - 1]);
-        bars[bars.size() - 1]->setData(p.ticker(), p.data()[i]);
-        bars[bars.size() - 1]->setBarsGroup(group);
-    }
-    ui->customPlot->setBackground(QBrush(gradient));
-    //ui->customPlot->xAxis->setRange(0, 4);
-    //ui->customPlot->yAxis->setRange(0, 10);
-    ui->customPlot->xAxis->setLabel(x_name);
-    ui->customPlot->yAxis->setLabel(y_name);
-
-    QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
-    textTicker->addTicks(p.ticker(), p.ticks_name());
-    ui->customPlot->xAxis->setTicker(textTicker);
-
-    ui->customPlot->legend->setVisible(legend);
-    ui->customPlot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignRight|Qt::AlignTop);
-    ui->customPlot->legend->setBrush(QColor(255, 255, 255, 100));
-    ui->customPlot->legend->setBorderPen(Qt::NoPen);
-    QFont legendFont = font();
-    legendFont.setPointSize(10);
-    ui->customPlot->legend->setFont(legendFont);
-    ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
-
-    /*ui->tableWidget->clear();
-    ui->tableWidget->setColumnCount(p.num());
-    ui->tableWidget->setRowCount(p.last() + 1);
-    QStringList lab;
-    for(int i = 0; i < p.num(); i++) {
-        lab << p.name_bars()[i];
-        //ui->tableWidget->setVerticalHeaderItem(0, new QTableWidgetItem("dsa"));
-    }
-    ui->tableWidget->setHorizontalHeaderLabels(lab);
-    lab.clear();
-    for(int i = 0; i < p.last() + 1; i++) {
-        lab << p.ticks_name()[i];
-    }
-    ui->tableWidget->setVerticalHeaderLabels(lab);
-    for(int i = 0; i < p.num(); i++) {
-        for(int j = 0; j < p.last() + 1; j++) {
-            //ui->tableWidget->editItem(new QTableWidgetItem(QString::number(p.data()[i][j])));
-            ui->tableWidget->setItem(j, i, new QTableWidgetItem(QString::number(p.data()[i][j])));
-        }
-    }*/
     tt = false;
     model->clear();
     model->setColumnCount(p.num());
@@ -242,7 +146,6 @@ void MainWindow::rebuild(Plot p)
     QStringList lab;
     for(int i = 0; i < p.num(); i++) {
         lab << p.name_bars()[i];
-        //ui->tableWidget->setVerticalHeaderItem(0, new QTableWidgetItem("dsa"));
     }
     model->setHorizontalHeaderLabels(lab);
     lab.clear();
@@ -252,7 +155,6 @@ void MainWindow::rebuild(Plot p)
     model->setVerticalHeaderLabels(lab);
     for(int i = 0; i < p.num(); i++) {
         for(int j = 0; j < p.last() + 1; j++) {
-            //ui->tableWidget->editItem(new QTableWidgetItem(QString::number(p.data()[i][j])));
             tt = false;
             model->setItem(j, i, new QStandardItem(QString::number(p.data()[i][j])));
         }
@@ -288,11 +190,9 @@ void MainWindow::on_doubleSpinBox_cur_data_valueChanged(double arg1)
         QVector<QString> labels = plots[cur].ticks_name();
         labels << QString::number(plots[cur].last() + 1);
         plots[cur].setTicks_name(labels);
-        //qDebug() << plots[cur].data()[0].size();
     }
-    rebuild(plots[cur]);
-    ui->customPlot->update();
-    ui->customPlot->replot();
+    plots[cur].build(ui->customPlot);
+    rebuild_table(plots[cur]);
     }
     table_change_data = true;
 }
@@ -305,9 +205,8 @@ void MainWindow::on_pushButton_Delete_clicked()
     }
     plots[cur].setData(data);
     ui->doubleSpinBox_cur_data->setValue(0);
-    rebuild(plots[cur]);
-    ui->customPlot->update();
-    ui->customPlot->replot();
+    plots[cur].build(ui->customPlot);
+    rebuild_table(plots[cur]);
 }
 
 void MainWindow::on_lineEdit_tick_name_textChanged(const QString &arg1)
@@ -315,9 +214,8 @@ void MainWindow::on_lineEdit_tick_name_textChanged(const QString &arg1)
     QVector<QString> labels = plots[cur].ticks_name();
     labels[ui->spinBox_cur_tick->value() - 1] = arg1;
     plots[cur].setTicks_name(labels);
-    rebuild(plots[cur]);
-    ui->customPlot->update();
-    ui->customPlot->replot();
+    plots[cur].build(ui->customPlot);
+    rebuild_table(plots[cur]);
 }
 
 void MainWindow::on_pushButton_save_png_clicked()
