@@ -19,6 +19,8 @@ class CreatePlot : public QDialog
 {
     Q_OBJECT
 
+    friend class Test1;
+
 public:
     explicit CreatePlot(QWidget *parent = nullptr);
     ~CreatePlot();

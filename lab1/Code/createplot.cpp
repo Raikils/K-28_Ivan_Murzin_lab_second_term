@@ -52,6 +52,7 @@ CreatePlot::~CreatePlot()
 
 void CreatePlot::on_OkButton_clicked()
 {
+    plot.setName(ui->lineEdit_name->text());
     close();
     emit CreateNewPlot(plot);
 }

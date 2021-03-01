@@ -181,6 +181,7 @@ void Plot::build(QCustomPlot *chart)
     chart->clearGraphs();
     chart->clearItems();
     _bars.clear();
+    _group = NULL;
     if (_group != NULL) _group->clear();
     if (_group != NULL) delete _group;
     _group = new QCPBarsGroup(chart);

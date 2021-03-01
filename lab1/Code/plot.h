@@ -14,6 +14,9 @@
 
 class Plot
 {
+
+    friend class Test1;
+
 private:
     QString _name;
     QColor _background;
