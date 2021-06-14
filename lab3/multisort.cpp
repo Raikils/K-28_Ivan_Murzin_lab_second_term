@@ -1,20 +1,22 @@
-#include "basicsort.h"
+#include "multisort.h"
 #include "convertfile.h"
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <chrono>
 
-int BasicSort::bufferSize() const
+int MultiSort::bufferSize() const
 {
     return _bufferSize;
 }
 
-void BasicSort::setBufferSize(int bufferSize)
+void MultiSort::setBufferSize(int bufferSize)
 {
     _bufferSize = bufferSize;
+    max_of_thread = 2;
 }
 
-void BasicSort::sort_main(FILE *f1)
+void MultiSort::sort_main(FILE *f1)
 {
     distribute_series(f1);
 
@@ -24,9 +26,9 @@ void BasicSort::sort_main(FILE *f1)
     int position1 = 0, position2 = 0, position3 = 0;
     first = 0;
     while(true) {
-        //std::cout << "f1:"; print_file(f1); std::cout << std::endl;
-        //std::cout << "f2:"; print_file(f2); std::cout << std::endl;
-        //std::cout << "f3:"; print_file(f3); std::cout << std::endl;
+        std::cout << "f1:"; print_file(f1); std::cout << std::endl;
+        std::cout << "f2:"; print_file(f2); std::cout << std::endl;
+        std::cout << "f3:"; print_file(f3); std::cout << std::endl;
         if ((first == 1 && second == 1) || (first == 1 && third == 1) || (second == 1 && third == 1)) break;
         if (!first) {
             if (second < third) {
@@ -34,10 +36,20 @@ void BasicSort::sort_main(FILE *f1)
                 position3 = 0;
                 seriesSize1 = seriesSize2 + seriesSize3;
                 for (int i = 0; i < second; i++) {
-                    merge(f2, f3, f1, position2, position3, position1, seriesSize2, seriesSize3);
-                    position1 += seriesSize1;
-                    position2 += seriesSize2;
-                    position3 += seriesSize3;
+                    int number_of_thread = 0;
+                    for (int j = 0; j < max_of_thread; j++) {
+                        if ((i + j) >= second) break;
+                        number_of_thread++;
+                        threads.push_back(std::thread(merge, f2, f3, f1, position2, position3, position1, seriesSize2, seriesSize3));
+                        position1 += seriesSize1;
+                        position2 += seriesSize2;
+                        position3 += seriesSize3;
+                    }
+                    for (int j = 0; j < number_of_thread; j++) {
+                        threads[j].join();
+                    }
+                    i += threads.size() - 1;
+                    threads.clear();
                 }
                 first = second;
                 third -= second;
@@ -49,10 +61,21 @@ void BasicSort::sort_main(FILE *f1)
                 position2 = 0;
                 seriesSize1 = seriesSize2 + seriesSize3;
                 for (int i = 0; i < third; i++) {
-                    merge(f2, f3, f1, position2, position3, position1, seriesSize2, seriesSize3);
-                    position1 += seriesSize1;
-                    position2 += seriesSize2;
-                    position3 += seriesSize3;
+                    int number_of_thread = 0;
+                    for (int j = 0; j < max_of_thread; j++) {
+                        if ((i + j) >= third) break;
+                        number_of_thread++;
+                        threads.push_back(std::thread(merge, f2, f3, f1, position2, position3, position1, seriesSize2, seriesSize3));
+                        position1 += seriesSize1;
+                        position2 += seriesSize2;
+                        position3 += seriesSize3;
+                    }
+                    for (int j = 0; j < number_of_thread; j++) {
+                        threads[j].join();
+                    }
+                    i += threads.size() - 1;
+                    std:: cout << i << " " << threads.size() << std::endl;
+                    threads.clear();
                 }
                 first = third;
                 second -= third;
@@ -66,10 +89,20 @@ void BasicSort::sort_main(FILE *f1)
                 position3 = 0;
                 seriesSize2 = seriesSize1 + seriesSize3;
                 for (int i = 0; i < first; i++) {
-                    merge(f1, f3, f2, position1, position3, position2, seriesSize1, seriesSize3);
-                    position1 += seriesSize1;
-                    position2 += seriesSize2;
-                    position3 += seriesSize3;
+                    int number_of_thread = 0;
+                    for (int j = 0; j < max_of_thread; j++) {
+                        if ((i + j) >= first) break;
+                        number_of_thread++;
+                        threads.push_back(std::thread(merge, f1, f3, f2, position1, position3, position2, seriesSize1, seriesSize3));
+                        position1 += seriesSize1;
+                        position2 += seriesSize2;
+                        position3 += seriesSize3;
+                    }
+                    for (int j = 0; j < number_of_thread; j++) {
+                        threads[j].join();
+                    }
+                    i += threads.size() - 1;
+                    threads.clear();
                 }
                 second = first;
                 third -= first;
@@ -81,10 +114,20 @@ void BasicSort::sort_main(FILE *f1)
                 position1 = 0;
                 seriesSize2 = seriesSize1 + seriesSize3;
                 for (int i = 0; i < third; i++) {
-                    merge(f1, f3, f2, position1, position3, position2, seriesSize1, seriesSize3);
-                    position1 += seriesSize1;
-                    position2 += seriesSize2;
-                    position3 += seriesSize3;
+                    int number_of_thread = 0;
+                    for (int j = 0; j < max_of_thread; j++) {
+                        if ((i + j) >= third) break;
+                        number_of_thread++;
+                        threads.push_back(std::thread(merge, f1, f3, f2, position1, position3, position2, seriesSize1, seriesSize3));
+                        position1 += seriesSize1;
+                        position2 += seriesSize2;
+                        position3 += seriesSize3;
+                    }
+                    for (int j = 0; j < number_of_thread; j++) {
+                        threads[j].join();
+                    }
+                    i += threads.size() - 1;
+                    threads.clear();
                 }
                 second = third;
                 first -= third;
@@ -98,10 +141,20 @@ void BasicSort::sort_main(FILE *f1)
                 position2 = 0;
                 seriesSize3 = seriesSize1 + seriesSize2;
                 for (int i = 0; i < first; i++) {
-                    merge(f1, f2, f3, position1, position2, position3, seriesSize1, seriesSize2);
-                    position1 += seriesSize1;
-                    position2 += seriesSize2;
-                    position3 += seriesSize3;
+                    int number_of_thread = 0;
+                    for (int j = 0; j < max_of_thread; j++) {
+                        if ((i + j) >= first) break;
+                        number_of_thread++;
+                        threads.push_back(std::thread(merge, f1, f2, f3, position1, position2, position3, seriesSize1, seriesSize2));
+                        position1 += seriesSize1;
+                        position2 += seriesSize2;
+                        position3 += seriesSize3;
+                    }
+                    for (int j = 0; j < number_of_thread; j++) {
+                        threads[j].join();
+                    }
+                    i += threads.size() - 1;
+                    threads.clear();
                 }
                 third = first;
                 second -= first;
@@ -113,10 +166,20 @@ void BasicSort::sort_main(FILE *f1)
                 position1 = 0;
                 seriesSize3 = seriesSize2 + seriesSize1;
                 for (int i = 0; i < second; i++) {
-                    merge(f1, f2, f3, position1, position2, position3, seriesSize1, seriesSize2);
-                    position1 += seriesSize1;
-                    position2 += seriesSize2;
-                    position3 += seriesSize3;
+                    int number_of_thread = 0;
+                    for (int j = 0; j < max_of_thread; j++) {
+                        if ((i + j) >= second) break;
+                        number_of_thread++;
+                        threads.push_back(std::thread(merge, f1, f2, f3, position1, position2, position3, seriesSize1, seriesSize2));
+                        position1 += seriesSize1;
+                        position2 += seriesSize2;
+                        position3 += seriesSize3;
+                    }
+                    for (int j = 0; j < number_of_thread; j++) {
+                        threads[j].join();
+                    }
+                    i += threads.size() - 1;
+                    threads.clear();
                 }
                 third = second;
                 first -= second;
@@ -160,7 +223,7 @@ void BasicSort::sort_main(FILE *f1)
     fclose(f1); fclose(f2); fclose(f3);
 }
 
-void BasicSort::distribute_series(FILE *f1)
+void MultiSort::distribute_series(FILE *f1)
 {
     FILE* f2 = fopen("f2.dat", "wb"), * f3 = fopen("f3.dat", "wb");
     int sum = 1, value;
@@ -207,8 +270,10 @@ void BasicSort::distribute_series(FILE *f1)
     fclose(f2); fclose(f3);
 }
 
-void BasicSort::merge(FILE* input1, FILE* input2, FILE* output, int position1, int position2, int position3, int seriesSize1, int seriesSize2)
+void MultiSort::merge(FILE* input1, FILE* input2, FILE* output, int position1, int position2, int position3, int seriesSize1, int seriesSize2)
 {
+    //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    //std::cout << position1 << " " << position2 << " " << position3 << " " << seriesSize1 << " " << seriesSize2 << std::endl;
     fseek(input1, sizeof (int) * position1, SEEK_SET);
     fseek(input2, sizeof (int) * position2, SEEK_SET);
     fseek(output, sizeof (int) * position3, SEEK_SET);
@@ -227,7 +292,7 @@ void BasicSort::merge(FILE* input1, FILE* input2, FILE* output, int position1, i
     }
 }
 
-void BasicSort::last_merge(FILE *input1, FILE *input2, FILE *output, int position1, int position2)
+void MultiSort::last_merge(FILE *input1, FILE *input2, FILE *output, int position1, int position2)
 {
     fseek(input1, sizeof (int) * position1, SEEK_SET);
     fseek(input2, sizeof (int) * position2, SEEK_SET);
@@ -254,26 +319,7 @@ void BasicSort::last_merge(FILE *input1, FILE *input2, FILE *output, int positio
     }
 }
 
-void BasicSort::step(FILE *f1, FILE *f2, FILE *f3, int k, int &b2, int &x2)
-{
-    int a1, b1, a2 = b2, i, x1 = 1; fread(&b1, sizeof (int), 1, f1); a1 = b1;
-    for (i = 0; i < k; i++) {
-        while ((a1 <= b1 && x1) || ((a2 <= b2) && x2)) {
-            if (a1 > b1 && x2) { fwrite(&b2, sizeof (int), 1, f3); a2 = b2; x2 = fread(&b2, sizeof (int), 1, f2); }
-            else if (a2 > b2 && x1) { fwrite(&b1, sizeof (int), 1, f3); a1 = b1; x1 = fread(&b1, sizeof (int), 1, f1); }
-            else if (b1 < b2 && x1) { fwrite(&b1, sizeof (int), 1, f3); x1 = fread(&b1, sizeof (int), 1, f1); }
-            else if (x2) { fwrite(&b2, sizeof (int), 1, f3); a2 = b2; x2 = fread(&b2, sizeof (int), 1, f2); }
-            else if (!x2) { fwrite(&b1, sizeof (int), 1, f3); x1 = fread(&b1, sizeof (int), 1, f1); }
-            else if (!x1) { fwrite(&b2, sizeof (int), 1, f3); a2 = b2; x2 = fread(&b2, sizeof (int), 1, f2); }
-            //std::cout << a1 << " " << x1 << std::endl;
-            //std::cout << a2 << " " << x2 << std::endl;
-        }
-        a1 = b1; a2 = b2;
-    }
-    b2 = b1; x2 = x1;
-}
-
-void BasicSort::print_file(FILE *f)
+void MultiSort::print_file(FILE *f)
 {
     rewind(f);
     while (!feof(f)) {
@@ -283,12 +329,12 @@ void BasicSort::print_file(FILE *f)
     }
 }
 
-BasicSort::BasicSort(std::string path): _file_path(path)
+MultiSort::MultiSort(std::string path): _file_path(path)
 {
     _bufferSize = 2;
 }
 
-void BasicSort::Sort()
+void MultiSort::Sort()
 {
     ConvertFile conv;
     if (_file_path[_file_path.size() - 3] == 't') {
