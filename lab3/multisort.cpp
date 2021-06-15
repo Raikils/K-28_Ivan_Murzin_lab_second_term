@@ -40,7 +40,7 @@ void MultiSort::sort_main(FILE *f1)
                     for (int j = 0; j < max_of_thread; j++) {
                         if ((i + j) >= second) break;
                         number_of_thread++;
-                        threads.push_back(std::thread(merge, f2, f3, f1, position2, position3, position1, seriesSize2, seriesSize3));
+                        threads.push_back(std::thread(merge, "f2.dat", "f3.dat", "f1.dat", position2, position3, position1, seriesSize2, seriesSize3));
                         position1 += seriesSize1;
                         position2 += seriesSize2;
                         position3 += seriesSize3;
@@ -65,7 +65,7 @@ void MultiSort::sort_main(FILE *f1)
                     for (int j = 0; j < max_of_thread; j++) {
                         if ((i + j) >= third) break;
                         number_of_thread++;
-                        threads.push_back(std::thread(merge, f2, f3, f1, position2, position3, position1, seriesSize2, seriesSize3));
+                        threads.push_back(std::thread(merge, "f2.dat", "f3.dat", "f1.dat", position2, position3, position1, seriesSize2, seriesSize3));
                         position1 += seriesSize1;
                         position2 += seriesSize2;
                         position3 += seriesSize3;
@@ -93,7 +93,7 @@ void MultiSort::sort_main(FILE *f1)
                     for (int j = 0; j < max_of_thread; j++) {
                         if ((i + j) >= first) break;
                         number_of_thread++;
-                        threads.push_back(std::thread(merge, f1, f3, f2, position1, position3, position2, seriesSize1, seriesSize3));
+                        threads.push_back(std::thread(merge, "f1.dat", "f3.dat", "f2.dat", position1, position3, position2, seriesSize1, seriesSize3));
                         position1 += seriesSize1;
                         position2 += seriesSize2;
                         position3 += seriesSize3;
@@ -118,7 +118,7 @@ void MultiSort::sort_main(FILE *f1)
                     for (int j = 0; j < max_of_thread; j++) {
                         if ((i + j) >= third) break;
                         number_of_thread++;
-                        threads.push_back(std::thread(merge, f1, f3, f2, position1, position3, position2, seriesSize1, seriesSize3));
+                        threads.push_back(std::thread(merge, "f1.dat", "f3.dat", "f2.dat", position1, position3, position2, seriesSize1, seriesSize3));
                         position1 += seriesSize1;
                         position2 += seriesSize2;
                         position3 += seriesSize3;
@@ -145,7 +145,7 @@ void MultiSort::sort_main(FILE *f1)
                     for (int j = 0; j < max_of_thread; j++) {
                         if ((i + j) >= first) break;
                         number_of_thread++;
-                        threads.push_back(std::thread(merge, f1, f2, f3, position1, position2, position3, seriesSize1, seriesSize2));
+                        threads.push_back(std::thread(merge, "f1.dat", "f2.dat", "f3.dat", position1, position2, position3, seriesSize1, seriesSize2));
                         position1 += seriesSize1;
                         position2 += seriesSize2;
                         position3 += seriesSize3;
@@ -170,7 +170,7 @@ void MultiSort::sort_main(FILE *f1)
                     for (int j = 0; j < max_of_thread; j++) {
                         if ((i + j) >= second) break;
                         number_of_thread++;
-                        threads.push_back(std::thread(merge, f1, f2, f3, position1, position2, position3, seriesSize1, seriesSize2));
+                        threads.push_back(std::thread(merge, "f1.dat", "f2.dat", "f3.dat", position1, position2, position3, seriesSize1, seriesSize2));
                         position1 += seriesSize1;
                         position2 += seriesSize2;
                         position3 += seriesSize3;
@@ -196,9 +196,9 @@ void MultiSort::sort_main(FILE *f1)
     else if (third == 1 && second == 1) {last_merge(f3, f2, f1, position3, position2); result = 1; }
     else if (first == 1 && third == 1) {last_merge(f1, f3, f2, position1, position3);  result = 2; }
 
-    //std::cout << "f1:"; print_file(f1); std::cout << std::endl;
-    //std::cout << "f2:"; print_file(f2); std::cout << std::endl;
-    //std::cout << "f3:"; print_file(f3); std::cout << std::endl;
+    std::cout << "f1:"; print_file(f1); std::cout << std::endl;
+    std::cout << "f2:"; print_file(f2); std::cout << std::endl;
+    std::cout << "f3:"; print_file(f3); std::cout << std::endl;
 
     if (result == 2) {
         rewind(f2);
@@ -270,9 +270,11 @@ void MultiSort::distribute_series(FILE *f1)
     fclose(f2); fclose(f3);
 }
 
-void MultiSort::merge(FILE* input1, FILE* input2, FILE* output, int position1, int position2, int position3, int seriesSize1, int seriesSize2)
+void MultiSort::merge(std::string path1, std::string path2, std::string path3, int position1, int position2, int position3, int seriesSize1, int seriesSize2)
 {
-    //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    FILE *input1 = fopen(path1.c_str(), "r+b");
+    FILE *input2 = fopen(path2.c_str(), "r+b");
+    FILE *output = fopen(path3.c_str(), "r+b");
     //std::cout << position1 << " " << position2 << " " << position3 << " " << seriesSize1 << " " << seriesSize2 << std::endl;
     fseek(input1, sizeof (int) * position1, SEEK_SET);
     fseek(input2, sizeof (int) * position2, SEEK_SET);
@@ -290,6 +292,7 @@ void MultiSort::merge(FILE* input1, FILE* input2, FILE* output, int position1, i
     } else {
         while (in1 <= seriesSize1) { fwrite(&value1, sizeof (int), 1, output); fread(&value1, sizeof (int), 1, input1); in1++; }
     }
+    fclose(input1); fclose(input2); fclose(output);
 }
 
 void MultiSort::last_merge(FILE *input1, FILE *input2, FILE *output, int position1, int position2)

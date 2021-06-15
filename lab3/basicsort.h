@@ -2,6 +2,10 @@
 #define BASICSORT_H
 #include <string>
 
+/*!
+ * \brief The BasicSort class
+ * Standart algorithm
+ */
 class BasicSort
 {
 private:
@@ -17,9 +21,21 @@ private:
     void step(FILE* f1, FILE* f2, FILE* f3, int k, int& b2, int& x2);
     void print_file(FILE* f);
 public:
+    /*!
+     * Constactor of class. Sets path of file. Sets buffer size 2
+     */
     BasicSort(std::string path);
+    /*!
+     * Sort given file
+     */
     void Sort();
+    /*!
+     * Returns size of buffer
+     */
     int bufferSize() const;
+    /*!
+     * Sets size of buffer
+     */
     void setBufferSize(int bufferSize);
 };
 
